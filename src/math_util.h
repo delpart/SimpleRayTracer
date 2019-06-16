@@ -1,5 +1,5 @@
 #ifndef MATHUTILH
-#define MATHITILH
+#define MATHUTILH
 #include "vec3.h"
 #include <random>
 

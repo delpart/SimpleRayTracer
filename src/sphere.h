@@ -1,5 +1,5 @@
 #ifndef SPHEREH
-#define SPHERE
+#define SPHEREH
 
 #include "surface.h"
 
@@ -22,7 +22,7 @@ bool sphere::hit(const ray& r, float tMin, float tMax, hitRecord& hitRec) const{
     float c = dot(oc, oc) - radius*radius;
     float discriminant = b*b - a*c;
     if(discriminant > 0){
-        float temp = (-b - sqrt(discriminant))/a;
+        float temp = (-b - sqrt(discriminant)) / a;
         if(temp < tMax && temp > tMin){
             hitRec.t = temp;
             hitRec.p = r.pointAtParameter(temp);
@@ -30,7 +30,7 @@ bool sphere::hit(const ray& r, float tMin, float tMax, hitRecord& hitRec) const{
             hitRec.mat = mat;
             return true;
         }
-        temp = (-b + sqrt(discriminant))/a;
+        temp = (-b + sqrt(discriminant)) / a;
         if(temp < tMax && temp > tMin){
             hitRec.t = temp;
             hitRec.p = r.pointAtParameter(temp);
@@ -41,5 +41,5 @@ bool sphere::hit(const ray& r, float tMin, float tMax, hitRecord& hitRec) const{
     }
     return false;
 }
-
 #endif
+

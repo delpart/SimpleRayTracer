@@ -118,7 +118,7 @@ inline vec3 operator*(const vec3 &v, float t) {
 }
 
 inline float dot(const vec3 &v1, const vec3 &v2) {
-    return v1.val[0] *v2.val[0] + v1.val[1] *v2.val[1]  + v1.val[2] *v2.val[2];
+    return v1.val[0] * v2.val[0] + v1.val[1] * v2.val[1]  + v1.val[2] * v2.val[2];
 }
 
 inline vec3 cross(const vec3 &v1, const vec3 &v2) {
@@ -177,7 +177,4 @@ inline vec3 unitVector(vec3 v) {
 }
 
 #endif
-
-
-
 

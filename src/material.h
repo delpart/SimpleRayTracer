@@ -1,6 +1,8 @@
 #ifndef MATERIALH
 #define MATERIALH
 #include "ray.h"
+#include "math_util.h"
+#include "surface_list.h"
 
 class material{
     public:
@@ -53,12 +55,12 @@ class dielectric: public material{
                 outNormal = -hitRec.normal;
                 refractionRatio = refractionIndex;
                 //cosine = refractionIndex*dot(inRay.getDirection(), hitRec.normal)/inRay.getDirection().length();
-                cosine = dot(inRay.getDirection(), hitRec.normal)/inRay.getDirection().length();
+                cosine = dot(inRay.getDirection(), hitRec.normal) / inRay.getDirection().length();
                 cosine = sqrt(1 - refractionIndex*refractionIndex*(1-cosine*cosine));
             }else{
                 outNormal = hitRec.normal;
-                refractionRatio = 1/refractionIndex;
-                cosine = -dot(inRay.getDirection(), hitRec.normal)/inRay.getDirection().length();
+                refractionRatio = 1.0/refractionIndex;
+                cosine = -dot(inRay.getDirection(), hitRec.normal) / inRay.getDirection().length();
             }
 
             if(refract(inRay.getDirection(), outNormal, refractionRatio, refracted)){
@@ -66,6 +68,7 @@ class dielectric: public material{
             }else{
                 reflectionProbability = 1.0;
             }
+
             if(drand48() < reflectionProbability){
                 scattered = ray(hitRec.p, reflected);
             }else{

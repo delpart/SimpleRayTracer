@@ -15,7 +15,7 @@ class camera{
     public:
         camera(vec3 lookFrom, vec3 lookAt, vec3 vup, float vfov, float aspect, float aperture, float focusDistance){
             lensRadius = aperture/2;
-            float theta = vfov*M_PI*180;
+            float theta = vfov*M_PI/180;
             float halfHeight = tan(theta/2);
             float halfWidth = aspect*halfHeight;
             origin = lookFrom;
@@ -29,7 +29,7 @@ class camera{
         ray getRay(float s, float t){
             vec3 rd = lensRadius*randomUnitDisk();
             vec3 offset = u*rd.x() + v*rd.y();
-            return ray(origin, lowerLeftCorner + s*horizontal + t*vertical - origin - offset);
+            return ray(origin + offset, lowerLeftCorner + s*horizontal + t*vertical - origin - offset);
         }
 
         vec3 origin;

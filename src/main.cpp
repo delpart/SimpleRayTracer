@@ -11,27 +11,16 @@ vec3 color(const ray& r, surface *world, int depth);
 surface* randomScene();
 
 int main(){
-    int nx = 200;
-    int ny = 100;
+    int nx = 640;
+    int ny = 480;
     int ns = 10;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-    vec3 lowerLeftCorner(-2.0, -1.0, -1.0);
-    vec3 horizontal(4.0, 0.0, 0.0);
-    vec3 vertical(0.0, 2.0, 0.0);
-    vec3 origin(0.0, 0.0, 0.0);
-    
-    //surface *list[5];
-    //list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
-    //list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-    //list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8,0.6,0.2), 0.0));
-    //list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
-    //list[4] = new sphere(vec3(-1,0,-1), -0.45, new dielectric(1.5));
     
     surface *world = randomScene();
     vec3 lookFrom = vec3(13,2,3);
     vec3 lookAt = vec3(0,0,0);
-    float focusDistance = (lookFrom - lookAt).length();
-    float aperture = 0.1;
+    float focusDistance = 10;
+    float aperture = 0.01;
 
     camera cam(lookFrom, lookAt, vec3(0,1,0), 20, float(nx)/float(ny), aperture, focusDistance);
     for(int y = ny - 1; y >= 0; --y){
@@ -41,7 +30,6 @@ int main(){
                 float u = float(x + drand48())/float(nx);
                 float v = float(y + drand48())/float(ny);
                 ray r = cam.getRay(u, v);
-                vec3 p = r.pointAtParameter(2.0);
                 col += color(r, world, 0);
             }
             col /= float(ns);
@@ -60,7 +48,7 @@ vec3 color(const ray& r, surface *world, int depth){
         ray scattered;
         vec3 attenuation;
         if(depth < 50 && hitRec.mat->scatter(r, hitRec, attenuation, scattered)){
-            return attenuation*color(scattered, world, ++depth);
+            return attenuation*color(scattered, world, depth+1);
         }else{
             return vec3(0,0,0);
         }
@@ -76,8 +64,8 @@ surface* randomScene(){
     surface **list = new surface*[n+1];
     list[0] = new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5,0.5,0.5)));
     int i = 1;
-    for(int a = -11; a < 11; ++a){
-        for(int b = -11; b < 11; ++b){
+    for(int a = -5; a < 5; ++a){
+        for(int b = -5; b < 5; ++b){
             float randMat = drand48();
             vec3 center(a+0.9*drand48(), 0.2, b+drand48());
             if((center-vec3(4,0.2,0)).length() > 0.9){
