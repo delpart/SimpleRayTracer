@@ -15,15 +15,16 @@ vec3 reflect(const vec3& v, const vec3& n){
     return v - 2*dot(v,n)*n;
 }
 
-bool refract(const vec3& v, const vec3& n, float refractionRatio, vec3 refracted){
+bool refract(const vec3& v, const vec3& n, float refractionRatio, vec3& refracted){
     vec3 uv = unitVector(v);
     float dt = dot(uv, n);
     float discriminant = 1.0 - refractionRatio*refractionRatio*(1-dt*dt);
     if(discriminant > 0){
         refracted = refractionRatio*(uv - n*dt) - n*sqrt(discriminant);
         return true;
-    }else
+    }else{
         return false;
+    }
 }
 
 float schlick(float cosine, float refractionIndex){

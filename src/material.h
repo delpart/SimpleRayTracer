@@ -42,12 +42,14 @@ class metal: public material{
 
 class dielectric: public material{
     public:
-        dielectric(float ri): refractionIndex(ri){}
+        dielectric(float ri): refractionIndex(ri){ albedo = vec3(1.0, 1.0, 1.0); }
+        dielectric(float ri, const vec3& a): refractionIndex(ri), albedo(a){}
+        
         virtual bool scatter(const ray& inRay, const hitRecord& hitRec, vec3& attenuation, ray& scattered) const{
             vec3 outNormal;
             vec3 reflected = reflect(inRay.getDirection(), hitRec.normal);
             float refractionRatio;
-            attenuation = vec3(1.0, 1.0, 1.0);
+            attenuation = albedo;
             vec3 refracted;
             float reflectionProbability;
             float cosine;
@@ -56,10 +58,10 @@ class dielectric: public material{
                 refractionRatio = refractionIndex;
                 //cosine = refractionIndex*dot(inRay.getDirection(), hitRec.normal)/inRay.getDirection().length();
                 cosine = dot(inRay.getDirection(), hitRec.normal) / inRay.getDirection().length();
-                cosine = sqrt(1 - refractionIndex*refractionIndex*(1-cosine*cosine));
+                cosine = sqrt(1 - refractionIndex*refractionIndex*(1 - cosine*cosine));
             }else{
                 outNormal = hitRec.normal;
-                refractionRatio = 1.0/refractionIndex;
+                refractionRatio = 1.0 / refractionIndex;
                 cosine = -dot(inRay.getDirection(), hitRec.normal) / inRay.getDirection().length();
             }
 
@@ -70,12 +72,13 @@ class dielectric: public material{
             }
 
             if(drand48() < reflectionProbability){
-                scattered = ray(hitRec.p, reflected);
+                scattered = ray(hitRec.p, refracted);
             }else{
                 scattered = ray(hitRec.p, refracted);
             }
             return true;
         }
+        vec3 albedo;
         float refractionIndex;
 };
 
