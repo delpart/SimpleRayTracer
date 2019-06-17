@@ -46,6 +46,7 @@ int main(){
         std::cout << *(img + x + nx*(y + ny*0)) << " " << *(img + x + nx*(y + ny*1))  << " " <<  *(img + x + nx*(y + ny*2))  << "\n";
       }
     }
+    free(img);
 }
 
 vec3 color(const ray& r, surface *world, int depth){
