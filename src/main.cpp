@@ -11,10 +11,10 @@ vec3 color(const ray& r, surface *world, int depth);
 surface* randomScene();
 
 int main(){
-    int nx = 1280;
-    int ny = 720;   
+    int nx = 1920;
+    int ny = 1080;   
     int ns = 100;
-    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    int *img = (int*)malloc(nx*ny*3*sizeof(int));
     
     surface *world = randomScene();
     vec3 lookFrom = vec3(13,2,3);
@@ -23,6 +23,7 @@ int main(){
     float aperture = 0.01;
 
     camera cam(lookFrom, lookAt, vec3(0,1,0), 20, float(nx)/float(ny), aperture, focusDistance);
+#pragma omp parallel for collapse(2)
     for(int y = ny - 1; y >= 0; --y){
         for(int x = 0; x < nx; ++x){
             vec3 col(0, 0, 0);
@@ -34,11 +35,16 @@ int main(){
             }
             col /= float(ns);
             col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
-            int red = int(255.99*col[0]);
-            int green = int(255.99*col[1]);
-            int blue = int(255.99*col[2]);
-            std::cout << red << " " << green << " " << blue << "\n";
+            *(img + x + nx*(y + ny*0)) = int(255.99*col[0]);
+            *(img + x + nx*(y + ny*1)) = int(255.99*col[1]);
+            *(img + x + nx*(y + ny*2)) = int(255.99*col[2]);
         } 
+    }
+    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    for(int y = ny-1; y >= 0; --y){
+      for(int x = 0; x < nx; ++x){
+        std::cout << *(img + x + nx*(y + ny*0)) << " " << *(img + x + nx*(y + ny*1))  << " " <<  *(img + x + nx*(y + ny*2))  << "\n";
+      }
     }
 }
 
