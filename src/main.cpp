@@ -12,12 +12,13 @@
 #include <SDL/SDL.h>
 #include <GL/gl.h>
 #include <thread>
+#include <algorithm>
 
 namespace po = boost::program_options;
 
 vec3 color(const Ray& r, Surface *scene, int depth);
 Surface* randomScene(int varA, int varB);
-void render(std::vector<std::uint8_t> *img, int width, int height, int numRaysPixel, Surface* scene, vec3 lookFrom, vec3 lookAt, float focalDistance, float aperture, float vfov);
+void render(std::vector<std::uint8_t> *img, int width, int height, int numRaysPixel, Surface* scene, vec3 lookFrom, vec3 lookAt, float focalDistance, float aperture, float vfov, bool shuffle);
 int preview(std::vector<std::uint8_t> *img, int width, int height, int pwidth, int pheight);
 
 int main(int argc, const char *argv[])
@@ -33,6 +34,7 @@ int main(int argc, const char *argv[])
     int varB;
     int pwidth;
     int pheight;
+    bool shuffle;
     std::string filename;
 
     po::options_description desc("A very simple ray tracer (╯°□°)╯︵ ┻━┻\n\nSupported parameters");
@@ -49,7 +51,8 @@ int main(int argc, const char *argv[])
     ("var-a", po::value<int>(&varA)->default_value(11), "controls the number of random spheres")
     ("var-b", po::value<int>(&varB)->default_value(11), "controls the number of random spheres")
     ("pwidth", po::value<int>(&pwidth)->default_value(1280), "width for the preview frame")
-    ("pheight", po::value<int>(&pheight)->default_value(720), "enables opengl preview frame");
+    ("pheight", po::value<int>(&pheight)->default_value(720), "enables opengl preview frame")
+    ("shuffle", po::bool_switch(&shuffle)->default_value(false), "randomizes the order of computation of the pixels");
 
     po::positional_options_description p;
     p.add("filename", -1);
@@ -78,35 +81,58 @@ int main(int argc, const char *argv[])
 
     std::thread t1(preview, &img, width, height, pwidth, pheight);
 
-    render(&img, width, height, numRaysPixel, scene, lookFrom, lookAt, focalDistance, aperture, vfov);
+    render(&img, width, height, numRaysPixel, scene, lookFrom, lookAt, focalDistance, aperture, vfov, shuffle);
 
     unsigned error = lodepng::encode(filename, img, width, height);
     if(error)
         std::cout << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
 
+    SDL_Event sdlevent;
+    sdlevent.type = SDL_QUIT;
+    SDL_PushEvent(&sdlevent);
+
     t1.join();
+
+    std::cout << "Done. Rendere scene saved as " << filename << std::endl;
 }
 
-void render(std::vector<std::uint8_t> *img, int width, int height, int numRaysPixel, Surface* scene, vec3 lookFrom, vec3 lookAt, float focalDistance, float aperture, float vfov)
+void render(std::vector<std::uint8_t> *img, int width, int height, int numRaysPixel, Surface* scene, vec3 lookFrom, vec3 lookAt, float focalDistance, float aperture, float vfov, bool shuffle)
 {
     Camera cam(lookFrom, lookAt, vec3(0,1,0), vfov, float(width)/float(height), aperture, focalDistance);
-    #pragma omp parallel for collapse(2)
-    for(int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            vec3 col(0, 0, 0);
-            for (int i = 0; i < numRaysPixel; ++i) {
-                float u = float(x + drand48()) / float(width);
-                float v = float(y + drand48()) / float(height);
-                Ray r = cam.getRay(u, v);
-                col += color(r, scene, 0);
-            }
-            col /= float(numRaysPixel);
-            col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
-            (*img)[4 * width * (height - y - 1) + 4 * x + 0] = int(255.99 * col[0]);
-            (*img)[4 * width * (height - y - 1) + 4 * x + 1] = int(255.99 * col[1]);
-            (*img)[4 * width * (height - y - 1) + 4 * x + 2] = int(255.99 * col[2]);
-            (*img)[4 * width * (height - y - 1) + 4 * x + 3] = 255;
+    std::vector<int> indices;
+    if(shuffle){
+        indices.resize(width*height);
+        for(int i = 0; i < width*height; ++i)
+            indices[i] = i;
+
+        std::random_shuffle(indices.begin(), indices.end());
+
+    }
+
+    #pragma omp parallel for
+    for(int i = 0; i < height*width; ++i){
+        int j = i;
+
+        if(shuffle){
+            j = indices[i];
         }
+
+        int x = j % width;
+        int y = j / width;
+
+        vec3 col(0, 0, 0);
+        for (int i = 0; i < numRaysPixel; ++i) {
+            float u = float(x + drand48()) / float(width);
+            float v = float(y + drand48()) / float(height);
+            Ray r = cam.getRay(u, v);
+            col += color(r, scene, 0);
+        }
+        col /= float(numRaysPixel);
+        col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
+        (*img)[4 * width * (height - y - 1) + 4 * x + 0] = int(255.99 * col[0]);
+        (*img)[4 * width * (height - y - 1) + 4 * x + 1] = int(255.99 * col[1]);
+        (*img)[4 * width * (height - y - 1) + 4 * x + 2] = int(255.99 * col[2]);
+        (*img)[4 * width * (height - y - 1) + 4 * x + 3] = 255;
     }
 }
 
@@ -173,6 +199,11 @@ Surface* randomScene(int varA, int varB)
 }
 
 int preview(std::vector<std::uint8_t> *img, int width, int height, int pwidth, int pheight){
+
+    if(pwidth > width)
+        pwidth = width;
+    if(pheight > height)
+        pheight = height;
 
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE) < 0) {
         std::cout << "Error: Unable to init SDL: " << SDL_GetError() << std::endl;
