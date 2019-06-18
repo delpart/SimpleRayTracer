@@ -1,7 +1,7 @@
 # SimpleRayTracer simple ray tracer inspired by Ray Tracing in One Weekend (https://github.com/petershirley/raytracinginoneweekend).
 
 
-'''
+```
 ./SimpleRaytracer --help
 A very simple ray tracer (╯°□°)╯︵ ┻━┻
 
@@ -16,4 +16,4 @@ Supported parameters:
   --aperture arg (=0.200000003) aperture of the camera
   --focal-distance arg (=10)    focal distance of the camera
   --seed arg (=42)              random seed for the scene
-'''
+```
