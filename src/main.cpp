@@ -51,7 +51,7 @@ int main(int argc, const char *argv[])
     ("var-a", po::value<int>(&varA)->default_value(11), "controls the number of random spheres")
     ("var-b", po::value<int>(&varB)->default_value(11), "controls the number of random spheres")
     ("pwidth", po::value<int>(&pwidth)->default_value(1280), "width for the preview frame")
-    ("pheight", po::value<int>(&pheight)->default_value(720), "enables opengl preview frame")
+    ("pheight", po::value<int>(&pheight)->default_value(720), "height for the preview frame")
     ("shuffle", po::bool_switch(&shuffle)->default_value(false), "randomizes the order of computation of the pixels");
 
     po::positional_options_description p;
