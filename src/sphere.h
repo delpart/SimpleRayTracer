@@ -3,19 +3,19 @@
 
 #include "surface.h"
 
-class material;
+class Material;
 
-class sphere: public surface{
+class Sphere: public Surface{
     public:
-        sphere(){}
-        sphere(vec3 pos, float r, material *m) : position(pos), radius(r), mat(m)  {};
-        virtual bool hit(const ray& r, float tMin, float tMax, hitRecord& hitRec) const;
+        Sphere(){}
+        Sphere(vec3 pos, float r, Material *m) : position(pos), radius(r), mat(m)  {};
+        virtual bool hit(const Ray& r, float tMin, float tMax, hitRecord& hitRec) const;
         vec3 position;
         float radius;
-        material *mat;
+        Material *mat;
 };
 
-bool sphere::hit(const ray& r, float tMin, float tMax, hitRecord& hitRec) const{
+bool Sphere::hit(const Ray& r, float tMin, float tMax, hitRecord& hitRec) const{
     vec3 oc = r.getOrigin() - position;
     float a = dot(r.getDirection(), r.getDirection());
     float b = dot(oc, r.getDirection());

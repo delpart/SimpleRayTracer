@@ -3,18 +3,18 @@
 
 #include "ray.h"
 
-class material;
+class Material;
 
 struct hitRecord{
     float t;
     vec3 p;
     vec3 normal;
-    material *mat;
+    Material *mat;
 };
 
-class surface{
+class Surface{
     public:
-        virtual bool hit(const ray& r, float tMin, float tMax, hitRecord& hitRec) const = 0;
+        virtual bool hit(const Ray& r, float tMin, float tMax, hitRecord& hitRec) const = 0;
 };
 
 #endif

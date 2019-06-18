@@ -3,19 +3,19 @@
 
 #include "surface.h"
 
-class surfaceList: public surface{
-    public: 
-        surfaceList(){}
-        surfaceList(surface **l, int n) {
+class SurfaceList: public Surface{
+    public:
+        SurfaceList(){}
+        SurfaceList(Surface **l, int n) {
             list = l;
             size = n;
         }
-        virtual bool hit(const ray& r, float tMin, float tMax, hitRecord& hitRec) const;
-        surface **list;
+        virtual bool hit(const Ray& r, float tMin, float tMax, hitRecord& hitRec) const;
+        Surface **list;
         int size;
 };
 
-bool surfaceList::hit(const ray& r, float tMin, float tMax, hitRecord& hitRec) const{
+bool SurfaceList::hit(const Ray& r, float tMin, float tMax, hitRecord& hitRec) const{
     hitRecord tempRec;
     bool hitAnything = false;
     float closestHit = tMax;

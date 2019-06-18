@@ -1,19 +1,20 @@
 #ifndef RAYH
 #define RAYH
+
 #include "vec3.h"
 
-class ray{
+class Ray{
     public:
-        ray(){}
-        ray(const vec3& orig, const vec3& dir){
+        Ray(){}
+        Ray(const vec3& orig, const vec3& dir){
             origin = orig;
             direction = dir;
         }
-        
+
         vec3 getOrigin() const {
             return origin;
         }
-        
+
         vec3 getDirection() const{
             return direction;
         }

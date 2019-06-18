@@ -1,38 +1,39 @@
 #ifndef MATERIALH
 #define MATERIALH
+
 #include "ray.h"
 #include "math_util.h"
 #include "surface_list.h"
 
-class material{
+class Material{
     public:
-        virtual bool scatter(const ray& inRay, const hitRecord& hitRec, vec3& attenuation, ray& scattered) const = 0;
+        virtual bool scatter(const Ray& inRay, const hitRecord& hitRec, vec3& attenuation, Ray& scattered) const = 0;
 };
 
-class lambertian : public material{
+class Lambertian : public Material{
     public:
-        lambertian(const vec3& a): albedo(a){}
-        virtual bool scatter(const ray& inRay, const hitRecord& hitRec, vec3& attenuation, ray& scattered) const{
+        Lambertian(const vec3& a): albedo(a){}
+        virtual bool scatter(const Ray& inRay, const hitRecord& hitRec, vec3& attenuation, Ray& scattered) const{
             vec3 target = hitRec.p + hitRec.normal + randomUnitSphere();
-            scattered = ray(hitRec.p, target - hitRec.p);
+            scattered = Ray(hitRec.p, target - hitRec.p);
             attenuation = albedo;
             return true;
         }
         vec3 albedo;
 };
 
-class metal: public material{
+class Metal: public Material{
     public:
-        metal(const vec3& a, float f) : albedo(a){
+        Metal(const vec3& a, float f) : albedo(a){
             if(f < 1)
                 fuzz = f;
             else
                 fuzz = 1;
         }
-        
-        virtual bool scatter(const ray& inRay, const hitRecord& hitRec, vec3& attenuation, ray& scattered) const{
+
+        virtual bool scatter(const Ray& inRay, const hitRecord& hitRec, vec3& attenuation, Ray& scattered) const{
             vec3 reflected = reflect(unitVector(inRay.getDirection()), hitRec.normal);
-            scattered = ray(hitRec.p, reflected + fuzz*randomUnitSphere());
+            scattered = Ray(hitRec.p, reflected + fuzz*randomUnitSphere());
             attenuation = albedo;
             return (dot(scattered.getDirection(), hitRec.normal) > 0);
         }
@@ -40,12 +41,12 @@ class metal: public material{
         float fuzz;
 };
 
-class dielectric: public material{
+class Dielectric: public Material{
     public:
-        dielectric(float ri): refractionIndex(ri){ albedo = vec3(1.0, 1.0, 1.0); }
-        dielectric(float ri, const vec3& a): refractionIndex(ri), albedo(a){}
-        
-        virtual bool scatter(const ray& inRay, const hitRecord& hitRec, vec3& attenuation, ray& scattered) const{
+        Dielectric(float ri): refractionIndex(ri){ albedo = vec3(1.0, 1.0, 1.0); }
+        Dielectric(float ri, const vec3& a): refractionIndex(ri), albedo(a){}
+
+        virtual bool scatter(const Ray& inRay, const hitRecord& hitRec, vec3& attenuation, Ray& scattered) const{
             vec3 outNormal;
             vec3 reflected = reflect(inRay.getDirection(), hitRec.normal);
             float refractionRatio;
@@ -72,14 +73,14 @@ class dielectric: public material{
             }
 
             if(drand48() < reflectionProbability){
-                scattered = ray(hitRec.p, refracted);
+                scattered = Ray(hitRec.p, reflected);
             }else{
-                scattered = ray(hitRec.p, refracted);
+                scattered = Ray(hitRec.p, refracted);
             }
             return true;
         }
-        vec3 albedo;
         float refractionIndex;
+        vec3 albedo;
 };
 
 #endif
