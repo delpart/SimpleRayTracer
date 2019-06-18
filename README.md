@@ -1,4 +1,6 @@
-# SimpleRayTracer simple ray tracer inspired by Ray Tracing in One Weekend (https://github.com/petershirley/raytracinginoneweekend).
+# SimpleRayTracer 
+
+A simple ray tracer inspired by Ray Tracing in One Weekend (https://github.com/petershirley/raytracinginoneweekend).
 
 
 ```
