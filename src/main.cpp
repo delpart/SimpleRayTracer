@@ -9,12 +9,17 @@
 #include "math_util.h"
 #include "material.h"
 #include "lodepng/lodepng.h"
+#include <SDL/SDL.h>
+#include <GL/gl.h>
+#include <thread>
 
 namespace po = boost::program_options;
 
 vec3 color(const Ray& r, Surface *scene, int depth);
-Surface* randomScene();
-std::vector<std::uint8_t> render(int width, int height, int numRaysPixel, Surface* scene, vec3 lookFrom, vec3 lookAt, float focalDistance, float aperture, float vfov);
+Surface* randomScene(int varA, int varB);
+void render(std::vector<std::uint8_t> *img, int width, int height, int numRaysPixel, Surface* scene, vec3 lookFrom, vec3 lookAt, float focalDistance, float aperture, float vfov);
+
+int preview(std::vector<std::uint8_t> *img, int width, int height);
 
 int main(int argc, const char *argv[])
 {
@@ -25,6 +30,8 @@ int main(int argc, const char *argv[])
     float aperture;
     float vfov;
     int seed;
+    int varA;
+    int varB;
     std::string filename;
 
     po::options_description desc("A very simple ray tracer (╯°□°)╯︵ ┻━┻\n\nSupported parameters");
@@ -37,7 +44,9 @@ int main(int argc, const char *argv[])
     ("vfov", po::value<float>(&vfov)->default_value(20), "field of view for the camera")
     ("aperture", po::value<float>(&aperture)->default_value(0.2), "aperture of the camera")
     ("focal-distance", po::value<float>(&focalDistance)->default_value(10), "focal distance of the camera")
-    ("seed", po::value<int>(&seed)->default_value(42), "random seed for the scene");
+    ("seed", po::value<int>(&seed)->default_value(42), "random seed for the scene")
+    ("var-a", po::value<int>(&varA)->default_value(11), "controls the number of random spheres")
+    ("var-b", po::value<int>(&varB)->default_value(11), "controls the number of random spheres");
     po::positional_options_description p;
     p.add("filename", -1);
     po::variables_map vm;
@@ -56,44 +65,42 @@ int main(int argc, const char *argv[])
     }
 
     srand48(seed);
-    Surface* scene = randomScene();
+    Surface* scene = randomScene(varA, varB);
     vec3 lookFrom = vec3(13,2,3);
     vec3 lookAt = vec3(0,0,0);
 
-    std::vector<std::uint8_t> img = render(width, height, numRaysPixel, scene, lookFrom, lookAt, focalDistance, aperture, vfov);
+    std::vector<std::uint8_t> img;
+    img.resize(width*height*4);
+    std::thread t1(preview, &img, width, height);
+
+    render(&img, width, height, numRaysPixel, scene, lookFrom, lookAt, focalDistance, aperture, vfov);
     unsigned error = lodepng::encode(filename, img, width, height);
     if(error)
         std::cout << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
+    t1.join();
 }
 
-std::vector<std::uint8_t> render(int width, int height, int numRaysPixel, Surface* scene, vec3 lookFrom, vec3 lookAt, float focalDistance, float aperture, float vfov)
+void render(std::vector<std::uint8_t> *img, int width, int height, int numRaysPixel, Surface* scene, vec3 lookFrom, vec3 lookAt, float focalDistance, float aperture, float vfov)
 {
-    std::vector<std::uint8_t> img;
-    img.resize(width*height*4);
-
     Camera cam(lookFrom, lookAt, vec3(0,1,0), vfov, float(width)/float(height), aperture, focalDistance);
     #pragma omp parallel for collapse(2)
-    for(int y = 0; y < height; ++y)
-    {
-        for(int x = 0; x < width; ++x)
-        {
+    for(int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
             vec3 col(0, 0, 0);
-            for(int i = 0; i < numRaysPixel; ++i)
-            {
-                float u = float(x + drand48())/float(width);
-                float v = float(y + drand48())/float(height);
+            for (int i = 0; i < numRaysPixel; ++i) {
+                float u = float(x + drand48()) / float(width);
+                float v = float(y + drand48()) / float(height);
                 Ray r = cam.getRay(u, v);
                 col += color(r, scene, 0);
             }
             col /= float(numRaysPixel);
             col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
-            img[4*width*(height - y - 1) + 4*x + 0] = int(255.99*col[0]);
-            img[4*width*(height - y - 1) + 4*x + 1] = int(255.99*col[1]);
-            img[4*width*(height - y - 1) + 4*x + 2] = int(255.99*col[2]);
-            img[4*width*(height - y - 1) + 4*x + 3] = 255;
+            (*img)[4 * width * (height - y - 1) + 4 * x + 0] = int(255.99 * col[0]);
+            (*img)[4 * width * (height - y - 1) + 4 * x + 1] = int(255.99 * col[1]);
+            (*img)[4 * width * (height - y - 1) + 4 * x + 2] = int(255.99 * col[2]);
+            (*img)[4 * width * (height - y - 1) + 4 * x + 3] = 255;
         }
     }
-    return img;
 }
 
 vec3 color(const Ray& r, Surface *scene, int depth)
@@ -120,15 +127,15 @@ vec3 color(const Ray& r, Surface *scene, int depth)
     }
 }
 
-Surface* randomScene()
+Surface* randomScene(int varA, int varB)
 {
     int n = 500;
     Surface **list = new Surface*[n+1];
     list[0] = new Sphere(vec3(0,-1000,0), 1000, new Lambertian(vec3(0.5,0.5,0.5)));
     int i = 1;
-    for(int a = -3; a < 3; ++a)
+    for(int a = -varA; a < varA; ++a)
     {
-        for(int b = -3; b < 3; ++b)
+        for(int b = -varB; b < varB; ++b)
         {
             float randMat = drand48();
             vec3 center(a+0.9*drand48(), 0.2, b+drand48());
@@ -156,4 +163,95 @@ Surface* randomScene()
     list[i++] = new Sphere(vec3(4, 1, 0), 1.0, new Metal(vec3(0.7, 0.6, 0.5), 0.0));
 
     return new SurfaceList(list, i);
+}
+
+int preview(std::vector<std::uint8_t> *img, int width, int height){
+    int screenw = width > 1024 ? 1024 : width;
+    int screenh = height > 768 ? 768 : height;
+
+
+    if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+        std::cout << "Error: Unable to init SDL: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+
+    SDL_Surface* scr = SDL_SetVideoMode(screenw, screenh, 32, SDL_OPENGL);
+
+    if(scr == 0) {
+        std::cout << "Error: Unable to set video. SDL error message: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+
+    // The official code for "Setting Your Raster Position to a Pixel Location" (i.e. set up a camera for 2D screen)
+    glViewport(0, 0, screenw, screenh);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, screenw, screenh, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    // Make some OpenGL properties better for 2D and enable alpha channel.
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+
+    if(glGetError() != GL_NO_ERROR) {
+        std::cout << "Error initing GL" << std::endl;
+        return 1;
+    }
+
+    // Texture size must be power of two for the primitive OpenGL version this is written for. Find next power of two.
+    size_t u2 = 1; while(u2 < width) u2 *= 2;
+    size_t v2 = 1; while(v2 < height) v2 *= 2;
+    // Ratio for power of two version compared to actual version, to render the non power of two image with proper size.
+    double u3 = (double)width / u2;
+    double v3 = (double)height / v2;
+
+    // Make power of two version of the image.
+    std::vector<unsigned char> image2(u2 * v2 * 4);
+    for(size_t y = 0; y < height; y++)
+        for(size_t x = 0; x < width; x++)
+            for(size_t c = 0; c < 4; c++) {
+                image2[4 * u2 * y + 4 * x + c] = (*img)[4 * width * y + 4 * x + c];
+            }
+
+    // Enable the texture for OpenGL.
+    glEnable(GL_TEXTURE_2D);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //GL_NEAREST = no smoothing
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 4, u2, v2, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image2[0]);
+
+    bool done = false;
+    SDL_Event event = {0};
+    glColor4ub(255, 255, 255, 255);
+
+    while(!done) {
+        // Quit the loop when receiving quit event.
+        while(SDL_PollEvent(&event)) {
+            if(event.type == SDL_QUIT) done = 1;
+        }
+        for(size_t y = 0; y < height; y++)
+            for(size_t x = 0; x < width; x++)
+                for(size_t c = 0; c < 4; c++) {
+                    image2[4 * u2 * y + 4 * x + c] = (*img)[4 * width * y + 4 * x + c];
+                }
+        glTexImage2D(GL_TEXTURE_2D, 0, 4, u2, v2, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image2[0]);
+        // Draw the texture on a quad, using u3 and v3 to correct non power of two texture size.
+        glBegin(GL_QUADS);
+        glTexCoord2d( 0,  0); glVertex2f(    0,      0);
+        glTexCoord2d(u3,  0); glVertex2f(width,      0);
+        glTexCoord2d(u3, v3); glVertex2f(width, height);
+        glTexCoord2d( 0, v3); glVertex2f(    0, height);
+        glEnd();
+
+        // Redraw and clear screen.
+        SDL_GL_SwapBuffers();
+        glClearColor(0, 0, 0, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //Limit frames per second, to not heat up the CPU and GPU too much.
+        SDL_Delay(16);
+    }
 }
