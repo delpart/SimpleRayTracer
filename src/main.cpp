@@ -45,7 +45,7 @@ int main(int argc, const char *argv[])
     ("height", po::value<int>(&height)->default_value(720), "height for the rendered scene")
     ("num-rays", po::value<int>(&numRaysPixel)->default_value(100), "number of rays per pixel ('Anti-Aliasing')")
     ("vfov", po::value<float>(&vfov)->default_value(20), "field of view for the camera")
-    ("aperture", po::value<float>(&aperture)->default_value(0.2), "aperture of the camera")
+    ("aperture", po::value<float>(&aperture)->default_value(0.01), "aperture of the camera")
     ("focal-distance", po::value<float>(&focalDistance)->default_value(10), "focal distance of the camera")
     ("seed", po::value<int>(&seed)->default_value(42), "random seed for the scene")
     ("var-a", po::value<int>(&varA)->default_value(11), "controls the number of random spheres")
@@ -255,11 +255,13 @@ int preview(std::vector<std::uint8_t> *img, int width, int height, int pwidth, i
         while(SDL_PollEvent(&event)) {
             if(event.type == SDL_QUIT) done = 1;
         }
-        for(size_t y = 0; y < height; y++)
-            for(size_t x = 0; x < width; x++)
-                for(size_t c = 0; c < 4; c++) {
+        for(size_t y = 0; y < height; y++) {
+            for (size_t x = 0; x < width; x++) {
+                for (size_t c = 0; c < 4; c++) {
                     image2[4 * u2 * y + 4 * x + c] = (*img)[4 * width * y + 4 * x + c];
                 }
+            }
+        }
         glTexImage2D(GL_TEXTURE_2D, 0, 4, u2, v2, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image2[0]);
         glBegin(GL_QUADS);
         glTexCoord2d( 0,  0); glVertex2f(    0,      0);
