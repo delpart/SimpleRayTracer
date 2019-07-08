@@ -71,6 +71,10 @@ class vec3{
         inline float squaredLength() const{
             return val[0]*val[0] + val[1]*val[1] + val[2]*val[2];
         }
+        
+        inline vec3 abs() const{
+            return vec3(std::abs(val[0]), std::abs(val[1]), std::abs(val[2]));
+        } 
 
         inline void toUnitVector();
 
